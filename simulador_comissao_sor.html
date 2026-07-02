@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador de Comissão — School of Rock</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #f4f4f4;
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 40px 16px;
+  }
+
+  .wrap {
+    background: #fff;
+    border: 0.5px solid #ddd;
+    border-radius: 12px;
+    overflow: hidden;
+    width: 100%;
+    max-width: 680px;
+  }
+
+  .sor-header {
+    background: #111;
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .sor-logo {
+    height: 36px;
+    width: auto;
+    display: block;
+    flex-shrink: 0;
+  }
+  .sor-logo-text {
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+    letter-spacing: 0.02em;
+    flex-shrink: 0;
+  }
+  .sor-logo-text .red { color: #E8001D; }
+  .header-divider { width: 0.5px; height: 28px; background: #333; flex-shrink: 0; }
+  .header-meta { flex: 1; }
+  .header-meta .title { font-size: 13px; font-weight: 500; color: #fff; }
+  .header-meta .sub { font-size: 11px; color: #555; margin-top: 2px; }
+
+  .body { padding: 1.25rem 1.5rem; background: #fff; }
+
+  .selector-row { display: flex; align-items: center; gap: 12px; margin-bottom: 1rem; }
+  .selector-row label { font-size: 13px; color: #666; white-space: nowrap; }
+  .selector-row select {
+    width: 200px;
+    font-size: 13px;
+    padding: 6px 10px;
+    border: 0.5px solid #ccc;
+    border-radius: 6px;
+    background: #fff;
+    color: #111;
+    outline: none;
+    cursor: pointer;
+  }
+  .selector-row select:focus { border-color: #E8001D; }
+
+  .meta-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #f7f7f7;
+    border: 0.5px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 8px 14px;
+    margin-bottom: 1.25rem;
+    font-size: 12px;
+    color: #666;
+    flex-wrap: wrap;
+  }
+  .meta-bar .meta-val { font-weight: 500; color: #111; margin-left: 3px; }
+  .meta-bar .sep { color: #ccc; margin: 0 10px; }
+
+  .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1.25rem; }
+  .input-card {
+    background: #fff;
+    border: 0.5px solid #ddd;
+    border-radius: 8px;
+    padding: 14px 16px;
+    transition: border-color 0.15s;
+  }
+  .input-card:focus-within { border-color: #E8001D; }
+  .input-card label { font-size: 12px; color: #666; display: block; margin-bottom: 6px; }
+  .input-card input {
+    width: 100%;
+    font-size: 20px;
+    font-weight: 500;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: #111;
+  }
+  .input-card input::placeholder { color: #ccc; font-weight: 400; }
+  .input-card .hint { font-size: 11px; color: #aaa; margin-top: 4px; }
+
+  .divider { border: none; border-top: 0.5px solid #eee; margin: 0 0 1.25rem; }
+
+  .results-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1.25rem; }
+
+  .col-garantido, .col-projetado { display: flex; flex-direction: column; gap: 8px; }
+
+  .col-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0 2px 4px;
+    border-bottom: 2px solid;
+  }
+  .col-label.garantido { color: #555; border-color: #555; }
+  .col-label.projetado { color: #E8001D; border-color: #E8001D; }
+
+  .res-card { border-radius: 8px; padding: 12px 14px; border: 0.5px solid #ddd; }
+  .res-card.dark { background: #111; border-color: #111; }
+  .res-card.light { background: #f7f7f7; }
+  .res-card.proj { background: #fff8f8; border-color: #fdd; }
+  .res-card.proj-dark { background: #2a0000; border-color: #550000; }
+
+  .rlabel { font-size: 11px; color: #aaa; margin-bottom: 4px; }
+  .res-card.dark .rlabel { color: #666; }
+  .res-card.proj-dark .rlabel { color: #aa5555; }
+
+  .rvalue { font-size: 20px; font-weight: 500; color: #111; }
+  .res-card.dark .rvalue { color: #fff; }
+  .res-card.proj-dark .rvalue { color: #ffaaaa; }
+
+  .rsub { font-size: 11px; color: #aaa; margin-top: 3px; }
+  .res-card.dark .rsub { color: #555; }
+  .res-card.proj-dark .rsub { color: #773333; }
+
+  .step-badge {
+    display: inline-block;
+    font-size: 11px;
+    border-radius: 4px;
+    padding: 2px 8px;
+    margin-top: 4px;
+    font-weight: 500;
+  }
+  .badge-low { background: #eee; color: #666; }
+  .badge-mid { background: #fff8e6; color: #996600; }
+  .badge-high { background: #fff0f0; color: #cc1111; }
+
+  .progress-section { margin-bottom: 1rem; }
+  .pb-row { margin-bottom: 12px; }
+  .pb-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: #aaa;
+    margin-bottom: 6px;
+    align-items: center;
+  }
+  .pb-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+  .pb-tag.garantido { color: #555; }
+  .pb-tag.projetado { color: #E8001D; }
+  .pb-track { height: 10px; background: #eee; border-radius: 5px; overflow: hidden; }
+  .pb-fill { height: 100%; border-radius: 5px; transition: width 0.25s; min-width: 0; }
+
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; padding-top: 4px; }
+  .leg-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #aaa; }
+  .leg-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+
+  .footer {
+    background: #f7f7f7;
+    border-top: 0.5px solid #eee;
+    padding: 10px 1.5rem;
+    font-size: 11px;
+    color: #bbb;
+  }
+
+  @media (max-width: 480px) {
+    .input-grid { grid-template-columns: 1fr; }
+    .results-wrap { grid-template-columns: 1fr; }
+    .meta-bar .sep { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="sor-header">
+    <img src="https://lfpassarelli.github.io/formulario-dados/images/school_logo.png" alt="School of Rock" class="sor-logo" onerror="this.style.display='none'; document.getElementById('logo-text').style.display='block'">
+    <div class="sor-logo-text" id="logo-text" style="display:none">SCHOOL<span class="red">of</span>ROCK</div>
+    <div class="header-divider"></div>
+    <div class="header-meta">
+      <div class="title">Simulador de comissão</div>
+      <div class="sub">Consultor de Matrícula · Jun–Dez 2026</div>
+    </div>
+  </div>
+
+  <div class="body">
+
+    <div class="selector-row">
+      <label for="month-select">Mês de referência</label>
+      <select id="month-select">
+        <option value="0">Junho — meta: 15 mat.</option>
+        <option value="1">Julho — meta: 7 mat.</option>
+        <option value="2">Agosto — meta: 15 mat.</option>
+        <option value="3">Setembro — meta: 18 mat.</option>
+        <option value="4">Outubro — meta: 10 mat.</option>
+        <option value="5">Novembro — meta: 7 mat.</option>
+        <option value="6">Dezembro — meta: 5 mat.</option>
+      </select>
+    </div>
+
+    <div class="meta-bar">
+      <span style="font-size:15px;color:#E8001D">&#9678;</span>
+      Meta do mês: <span class="meta-val" id="meta-label">15 matrículas</span>
+      <span class="sep">·</span>
+      <span style="font-size:14px">&#9673;</span>
+      Fixo mensal: <span class="meta-val">R$ 2.500</span>
+    </div>
+
+    <div class="input-grid">
+      <div class="input-card">
+        <label>Matrículas já fechadas</label>
+        <input type="number" min="0" id="inp-fechadas" placeholder="0">
+        <div class="hint">Compensadas no mês</div>
+      </div>
+      <div class="input-card">
+        <label>Oportunidades em aberto</label>
+        <input type="number" min="0" id="inp-abertas" placeholder="0">
+        <div class="hint">Propostas ativas ainda não confirmadas</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="results-wrap">
+      <div class="col-garantido">
+        <div class="col-label garantido">Garantido</div>
+        <div class="res-card light">
+          <div class="rlabel">Comissão garantida</div>
+          <div class="rvalue" id="earn-garantida">R$ 0</div>
+          <div id="badge-garantida" class="step-badge badge-low" style="display:none"></div>
+          <div class="rsub" id="sub-garantida">0 mat. fechadas</div>
+        </div>
+        <div class="res-card dark">
+          <div class="rlabel">Valor bruto a receber</div>
+          <div class="rvalue" id="earn-bruto">R$ 2.500</div>
+          <div class="rsub">fixo + comissão garantida</div>
+        </div>
+      </div>
+
+      <div class="col-projetado">
+        <div class="col-label projetado">Projetado — se oportunidades fecharem</div>
+        <div class="res-card proj">
+          <div class="rlabel">Comissão projetada</div>
+          <div class="rvalue" id="earn-projetada">R$ 0</div>
+          <div id="badge-projetada" class="step-badge badge-low" style="display:none"></div>
+          <div class="rsub" id="sub-projetada">informe oportunidades em aberto</div>
+        </div>
+        <div class="res-card proj-dark">
+          <div class="rlabel">Valor bruto projetado</div>
+          <div class="rvalue" id="earn-bruto-proj">R$ 2.500</div>
+          <div class="rsub">fixo + comissão projetada</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="progress-section">
+      <div class="pb-row">
+        <div class="pb-header">
+          <span class="pb-tag garantido">Garantido</span>
+          <span id="pct-garantido" style="font-size:11px;color:#aaa">0% da meta</span>
+        </div>
+        <div class="pb-track">
+          <div class="pb-fill" id="pb-garantido" style="width:0%;background:#ccc"></div>
+        </div>
+      </div>
+      <div class="pb-row">
+        <div class="pb-header">
+          <span class="pb-tag projetado">Projetado</span>
+          <span id="pct-projetado" style="font-size:11px;color:#aaa">0% da meta</span>
+        </div>
+        <div class="pb-track">
+          <div class="pb-fill" id="pb-projetado" style="width:0%;background:#ccc"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <div class="leg-item"><div class="leg-dot" style="background:#bbb"></div>&lt; 80% da meta → R$ 180/mat.</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#cc9900"></div>80–109% → R$ 210/mat.</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#E8001D"></div>≥ 110% → R$ 250/mat.</div>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    Valores brutos antes de impostos. Step calculado ao final do mês sobre todas as matrículas compensadas.
+  </div>
+</div>
+
+<script>
+  const MONTHS = [
+    { label: 'Junho',     meta: 15 },
+    { label: 'Julho',    meta: 7  },
+    { label: 'Agosto',   meta: 15 },
+    { label: 'Setembro', meta: 18 },
+    { label: 'Outubro',  meta: 10 },
+    { label: 'Novembro', meta: 7  },
+    { label: 'Dezembro', meta: 5  },
+  ];
+
+  function getStep(n, meta) {
+    const r = n / meta;
+    if (r >= 1.10) return { label: '≥ 110% da meta · R$ 250/mat.', cls: 'badge-high', rate: 250, pbColor: '#E8001D' };
+    if (r >= 0.80) return { label: '80–109% da meta · R$ 210/mat.', cls: 'badge-mid', rate: 210, pbColor: '#cc9900' };
+    return { label: '< 80% da meta · R$ 180/mat.', cls: 'badge-low', rate: 180, pbColor: '#888' };
+  }
+
+  function fmt(n) {
+    return 'R$ ' + Math.round(n).toLocaleString('pt-BR');
+  }
+
+  function update() {
+    const idx = parseInt(document.getElementById('month-select').value);
+    const m = MONTHS[idx];
+    document.getElementById('meta-label').textContent = m.meta + ' matrículas';
+
+    const f = Math.max(0, parseInt(document.getElementById('inp-fechadas').value) || 0);
+    const a = Math.max(0, parseInt(document.getElementById('inp-abertas').value) || 0);
+    const total = f + a;
+
+    const stG = getStep(Math.max(f, 0.0001), m.meta);
+    const stP = getStep(Math.max(total, 0.0001), m.meta);
+
+    const earnG = f * stG.rate;
+    const earnP = total * stP.rate;
+
+    document.getElementById('earn-garantida').textContent = fmt(earnG);
+    document.getElementById('earn-projetada').textContent = fmt(earnP);
+    document.getElementById('earn-bruto').textContent = fmt(2500 + earnG);
+    document.getElementById('earn-bruto-proj').textContent = fmt(2500 + earnP);
+
+    document.getElementById('sub-garantida').textContent = f + ' mat. fechadas';
+    document.getElementById('sub-projetada').textContent = total > 0
+      ? total + ' mat. (fechadas + em aberto)'
+      : 'informe oportunidades em aberto';
+
+    const bg = document.getElementById('badge-garantida');
+    bg.textContent = stG.label;
+    bg.className = 'step-badge ' + stG.cls;
+    bg.style.display = f > 0 ? 'inline-block' : 'none';
+
+    const bp = document.getElementById('badge-projetada');
+    bp.textContent = stP.label;
+    bp.className = 'step-badge ' + stP.cls;
+    bp.style.display = total > 0 ? 'inline-block' : 'none';
+
+    const pctG = Math.min(Math.round((f / m.meta) * 100), 100);
+    const pctP = Math.min(Math.round((total / m.meta) * 100), 100);
+
+    document.getElementById('pct-garantido').textContent = pctG + '% da meta';
+    document.getElementById('pct-projetado').textContent = pctP + '% da meta';
+
+    const pbG = document.getElementById('pb-garantido');
+    pbG.style.width = pctG + '%';
+    pbG.style.background = f > 0 ? stG.pbColor : '#ccc';
+
+    const pbP = document.getElementById('pb-projetado');
+    pbP.style.width = pctP + '%';
+    pbP.style.background = total > 0 ? stP.pbColor : '#ccc';
+  }
+
+  document.getElementById('month-select').addEventListener('change', function() {
+    document.getElementById('inp-fechadas').value = '';
+    document.getElementById('inp-abertas').value = '';
+    update();
+  });
+  document.getElementById('inp-fechadas').addEventListener('input', update);
+  document.getElementById('inp-abertas').addEventListener('input', update);
+  update();
+</script>
+
+</body>
+</html>
